@@ -3,6 +3,7 @@ const router = express.Router();
 const scrapeIt = require('scrape-it');
 const rp = require('request-promise');
 const request = require('request');
+const Data = require('../models/Data')
 
 /* GET home page. */
 router.get('/', function(req, res, next) {
@@ -84,7 +85,14 @@ router.post('/', function(req, f_res, next) {
                 console.log(itemsProcessed, (thisArray.length - 1))
                 if(itemsProcessed === (thisArray.length - 1)) {
                   console.log('all done!')
-                  f_res.json(thisArray)
+                  // Save data
+                  var newData = new Data({
+                    data: thisArray
+                  })
+                  Data.saveData(newData, (err, data) =>{
+                    // Send data to the front
+                    f_res.json(thisArray)
+                  })
                 }else{
                   itemsProcessed++;
                 }
@@ -93,7 +101,6 @@ router.post('/', function(req, f_res, next) {
                 console.log('Error: ', err)
               });
         } ///
-
 
       })
   });
