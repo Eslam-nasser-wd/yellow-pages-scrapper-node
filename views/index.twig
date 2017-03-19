@@ -1,0 +1,42 @@
+{% extends 'layout.twig' %}
+
+{% block body %}
+  <div id="index_page">
+    <div class="logo">
+      <img src="img/logo.svg">
+    </div>
+    <div class="input">
+      <input type="text" placeholder="URL..." id="yp_url" autofocus>
+      <div class="btn pmd-btn-raised pmd-ripple-effect btn-primary sendUrl">scrape</div>
+    </div>
+  </div>
+
+  <div id="table_page" style="display: none">
+    <!-- Hoverable table -->
+    <span class="counter"><span></span> contact collected</span>
+    <div class="pmd-card pmd-z-depth">
+      <div class="table-responsive">
+        <table class="table pmd-table table-hover">
+          <thead>
+            <tr>
+              <th class="text-center">Logo</th>
+              <th>Name</th>
+              <th>Address</th>
+              <th>Phones</th>
+              <th>Description</th>
+              <th>Categories</th>
+              <th>Keywords</th>
+            </tr>
+          </thead>
+          <tbody>
+            {#Auto generate#}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    NOTE: this option is still under development
+    <a href="#" class="btn pmd-btn-raised pmd-ripple-effect btn-success export">Export as CSV</a>
+  </div>
+
+  <div class="loader"><span></span></div>
+{% endblock %}
