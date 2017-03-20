@@ -10,6 +10,13 @@ router.get('/', function(req, res, next) {
   res.render('index')
 })
 
+router.get('/api', function(req, res, next) {
+  Data.find({}, (err, data) => {
+    if(err) throw err;
+    res.json(data)
+  })
+})
+
 router.post('/', function(req, f_res, next) {
   console.log('\non it!\n')
   // Loop through data
