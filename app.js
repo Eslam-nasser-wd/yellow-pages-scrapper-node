@@ -5,9 +5,9 @@ var cookieParser      = require('cookie-parser');
 var bodyParser        = require('body-parser');
 const config          = require('config')
 const mongoose        = require('mongoose')
+const opn             = require('opn');
 
 var index = require('./routes/index');
-var users = require('./routes/users');
 
 var app = express();
 
@@ -18,7 +18,8 @@ app.set('view engine', 'twig');
 // DB
 mongoose.connect(config.db)
 mongoose.connection.on('connected', () => {
-  console.log('Let\'s role!')
+  console.log('Let\'s role! .. opening browser')
+  // opn('http://localhost:3000');
 })
 mongoose.connection.on('error', (error) => {
   console.log('Something worng!!', error)
@@ -32,7 +33,6 @@ app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.use('/', index);
-app.use('/users', users);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {

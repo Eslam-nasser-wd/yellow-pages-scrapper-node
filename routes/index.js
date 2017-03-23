@@ -19,99 +19,138 @@ router.get('/api', function(req, res, next) {
 
 router.post('/', function(req, f_res, next) {
   console.log('\non it!\n')
-  // Loop through data
   scrapeIt(req.body.url, {
-    items: {
-      listItem: ".content-widget",
-      data: {
-        title: 'a.companyName',
-        logo: {
-          selector: '.content-image.imageAvailable img',
-          attr: 'src'
-        },
-        address: {
-          selector: '.row.address .col-xs-12',
-          how: 'html'
-        },
-        description: '.additionalBar .aboutUs',
-        categories_onlyOne: '.category.onlyOne span',
-        categories_allRest: {
-          selector: '.otherCategories',
-          attr: 'data-content'
-        },
-        keywords_onlyOne: {
-          listItem: '.keyword.onlyOne.commaSeparator span'
-        },
-        keywords_allRest: {
-          selector: '.otherKeywords',
-          attr: 'data-content'
-        },
-        phone_link: {
-          selector: '.loadPhones.ajaxLoad',
-          attr: 'data-link'
-        }
-      }
-    }
+    totalNumber: 'span.numberOfResults'
   }).then(data => {
-      var itemsProcessed = 0;
-      data.items.forEach((item, i, thisArray) =>{
-        // Remove empty objects
-        if(thisArray[i].address === null && thisArray[i].title === '' && thisArray[i].description === '' ){
-          let indexOf = thisArray.indexOf(thisArray[i]);
-          if (indexOf > -1) {
-              thisArray.splice(indexOf, 1);
-          }
-        }///
+    var howManyPages = Math.floor(parseInt(cleanTotalResults(data.totalNumber)) / 20)
+    var itemProcessed = 0
+    console.log('there is ', howManyPages, ' pages in this link')
 
-        // Clean the data and merge them
-        thisArray[i].address = cleanData(thisArray[i].address)
-        if(thisArray[i].keywords_allRest !== undefined){
-          thisArray[i].keywords_allRest = thisArray[i].keywords_allRest.split('<br>');
-          thisArray[i].keywords = thisArray[i].keywords_onlyOne.concat(thisArray[i].keywords_allRest)
-          delete thisArray[i].keywords_allRest;
-          delete thisArray[i].keywords_onlyOne;
-        }
-        if(thisArray[i].categories_allRest !== undefined){
-          thisArray[i].categories_allRest = thisArray[i].categories_allRest.split('<br>');
-          thisArray[i].categories_onlyOne = thisArray[i].categories_onlyOne.split('<br>');
-          thisArray[i].categories = thisArray[i].categories_onlyOne.concat(thisArray[i].categories_allRest)
-          delete thisArray[i].categories_allRest;
-          delete thisArray[i].categories_onlyOne;
-        }///
-
-
-        // Get phones numbers
-        if(thisArray[i].phone_link !== undefined){
-            var options = {
-                uri: 'https://www.yellowpages.com.eg'+ thisArray[i].phone_link,
-                json: true
+    for(let i = 0; i <= howManyPages; i++){
+      var currentWorkingUrl = req.body.url+'/p'+(i+1)
+      console.log('** working in page ', currentWorkingUrl)
+      // Loop through data
+      scrapeIt(currentWorkingUrl, {
+        items: {
+          listItem: '.content-widget',
+          data: {
+            title: 'a.companyName',
+            logo: {
+              selector: '.content-image.imageAvailable img',
+              attr: 'src'
+            },
+            address: {
+              selector: '.row.address .col-xs-12',
+              how: 'html'
+            },
+            description: '.additionalBar .aboutUs',
+            categories_onlyOne: '.category.onlyOne span',
+            categories_allRest: {
+              selector: '.otherCategories',
+              attr: 'data-content'
+            },
+            keywords_onlyOne: {
+              listItem: '.keyword.onlyOne.commaSeparator span'
+            },
+            keywords_allRest: {
+              selector: '.otherKeywords',
+              attr: 'data-content'
+            },
+            phone_link: {
+              selector: '.loadPhones.ajaxLoad',
+              attr: 'data-link'
             }
-            rp(options)
-              .then(function (json_res) {
-                thisArray[i].phones = cleanPhonesNumbers(json_res)
-                console.log(itemsProcessed, (thisArray.length - 1))
-                if(itemsProcessed === (thisArray.length - 1)) {
-                  console.log('all done!')
-                  // Save data
-                  var newData = new Data({
-                    data: thisArray
-                  })
-                  Data.saveData(newData, (err, data) =>{
-                    // Send data to the front
-                    f_res.json(thisArray)
-                  })
-                }else{
-                  itemsProcessed++;
-                }
-              })
-              .catch(function (err) {
-                console.log('Error: ', err)
-              });
-        } ///
+          }
+        }
+      }).then(data => {
+          console.log('\nok, so we have some data!\n')
+          var phoneProcessed = 0,
+              newArray = [];
+          data.items.forEach((item, i, thisArray) =>{
 
-      })
-  });
+            // Remove empty objects
+            if(thisArray[i].address === null && thisArray[i].title === '' && thisArray[i].description === '' ){
+              let indexOf = thisArray.indexOf(thisArray[i]);
+              if (indexOf > -1) {
+                  thisArray.splice(indexOf, 1);
+              }
+            }///
+
+            // Keywords and address clean
+            thisArray[i].address = cleanData(thisArray[i].address)
+            if(thisArray[i].keywords_allRest === undefined){
+              thisArray[i].keywords_allRest = ''
+            }
+            if(thisArray[i].keywords_onlyOne === undefined){
+              thisArray[i].keywords_onlyOne = ''
+            }
+            thisArray[i].keywords_allRest = thisArray[i].keywords_allRest.split('<br>');
+            thisArray[i].keywords = thisArray[i].keywords_onlyOne.concat(thisArray[i].keywords_allRest)
+            delete thisArray[i].keywords_allRest;
+            delete thisArray[i].keywords_onlyOne;
+            thisArray[i].keywords = cleanArray(thisArray[i].keywords)
+
+            // Category clean
+            if(thisArray[i].categories_onlyOne === undefined){
+              thisArray[i].categories_onlyOne = ''
+            }
+            if(thisArray[i].categories_allRest === undefined){
+              thisArray[i].categories_allRest = ''
+            }
+            thisArray[i].categories_onlyOne = thisArray[i].categories_onlyOne.split('<br>');
+            thisArray[i].categories_allRest = thisArray[i].categories_allRest.split('<br>');
+            thisArray[i].categories = thisArray[i].categories_onlyOne.concat(thisArray[i].categories_allRest)
+            delete thisArray[i].categories_allRest;
+            delete thisArray[i].categories_onlyOne;
+            thisArray[i].categories = cleanArray(thisArray[i].categories)
+
+            // Get phones numbers
+            // if(thisArray[i].phone_link !== undefined){
+            //     var options = {
+            //         uri: 'https://www.yellowpages.com.eg'+ thisArray[i].phone_link,
+            //         json: true
+            //     }
+            //     rp(options)
+            //       .then(function (json_res) {
+            //         thisArray[i].phones = cleanPhonesNumbers(json_res)
+            //         console.log(`I got ${phoneProcessed + 1} of ${(thisArray.length)} results`)
+            //         if(phoneProcessed === (thisArray.length - 1)) {
+            //           console.log('Saving this page data!')
+            //           // Save data
+            //           var newData = new Data({
+            //             data: thisArray
+            //           })
+            //           Data.saveData(newData, (err, data) =>{
+            //             // Send data to the front
+            //             console.log('Data saved!')
+            //             // f_res.json(thisArray)
+            //           })
+            //         }else{
+            //           phoneProcessed++;
+            //         }
+            //       })
+            //       .catch(function (err) {
+            //         console.log('Error: ', err)
+            //       });
+            // } ///
+
+            newArray.push(thisArray[i])
+
+          })
+
+          var newData = new Data({
+            data: newArray
+          })
+          Data.saveData(newData, (err, data) =>{
+            console.log('Data saved!')
+          })
+      });
+    }
+
+  })// end of getting howManyPages.then
+
 });
+
 
 
 function cleanPhonesNumbers(code){
@@ -134,13 +173,94 @@ function cleanPhonesNumbers(code){
 function cleanData(code){
   code = code.replace(/Map it/g,''); // Remove '>
   code = code.replace(/<br>/g,','); // Remove <br>
-  //code = code.replace(/\+\d/g,''); // Remove +(digit)
   code = code.replace(/<(?:.|\n)*?>/gm, ' '); // Remove html tags
   code = code.replace(/\s+/g,' ').trim(); // Clean un-needed spaces
   return code;
 }
 
+function cleanTotalResults(code){
+  code = code.replace(/Showing/g,''); // Remove '>
+  code = code.replace(/Result/g,''); // Remove '>
+  code = code.replace(/of/g,''); // Remove '>
+  code = code.replace(/\s+/g,' ').trim(); // Clean un-needed spaces
+  code = code.replace(/(\d+-\d+)/gim, '')
+  return code;
+}
+
+function cleanArray(actual) {
+  var newArray = new Array();
+  for (var i = 0; i < actual.length; i++) {
+    if (actual[i]) {
+      newArray.push(actual[i]);
+    }
+  }
+  return newArray;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 module.exports = router;
+
+
+
 
 
 // Helpers

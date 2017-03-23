@@ -11,7 +11,7 @@ $(function(){
             success: function(e){
                 // console.log(e)
                 $('.counter span').text(e.length)
-
+                $('tbody').html('')
                 e.forEach(function(item){
                     var logo_url = item.logo ? item.logo : 'img/no_logo.jpg'
                     var keywords = item.keywords ? item.keywords : '<span class="btn btn-danger pmd-ripple-effect">No keywords available</span>'
@@ -20,7 +20,7 @@ $(function(){
                     var title = item.title ? item.title : '<span class="btn btn-danger pmd-ripple-effect">No title available</span>'
                     var phones = item.phones ? item.phones : '<span class="btn btn-danger pmd-ripple-effect">No phones available</span>'
                     var categories = item.categories ? item.categories : '<span class="btn btn-danger pmd-ripple-effect">No categories available</span>'
-
+                    
                     $('tbody').append(`
                         <tr>
                             <td><img src="${logo_url}"></td>
@@ -43,32 +43,4 @@ $(function(){
         })
 
     })
-
-	function exportTableToCSV($table, filename) {
-        var $rows = $table.find('tr:has(td),tr:has(th)'),
-            tmpColDelim = String.fromCharCode(11), // vertical tab character
-            tmpRowDelim = String.fromCharCode(0), // null character
-            colDelim = '","',
-            rowDelim = '"\r\n"',
-            csv = '"' + $rows.map(function (i, row) {
-                var $row = $(row), $cols = $row.find('td,th');
-                return $cols.map(function (j, col) {
-                    var $col = $(col), text = $col.text();
-                    return text.replace(/"/g, '""'); // escape double quotes
-                }).get().join(tmpColDelim);
-            }).get().join(tmpRowDelim)
-                .split(tmpRowDelim).join(rowDelim)
-                .split(tmpColDelim).join(colDelim) + '"',
-            csvData = 'data:application/csv;charset=utf-8,' + encodeURIComponent(csv);
-        	if (window.navigator.msSaveBlob) { // IE 10+
-        		window.navigator.msSaveOrOpenBlob(new Blob([csv], {type: "text/plain;charset=utf-8;"}), "csvname.csv")
-        	} 
-        	else {
-        		$(this).attr({ 'download': filename, 'href': csvData, 'target': '_blank' }); 
-        	}
-    }
-    // This must be a hyperlink
-    $(".export").on('click', function (event) {
-        exportTableToCSV.apply(this, [$('table'), 'export.csv']);
-    });
 });
